@@ -1,0 +1,104 @@
+﻿@page "/"
+@inject IYoutubeAPI youtubeAPI
+@inject NavigationManager navigationManager
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+<section>
+  <article>
+    <form @onsubmit="searchYoutube">
+      <label>youtube search:</label>
+      <input @bind-value="keyword" />
+      <button>search</button>
+    </form>
+  </article>
+</section>
+
+<section>
+  <article>
+    @if (youtubeList.Count > 0)
+    {
+      @foreach (var item in youtubeList)
+      {
+        <div>
+          <img src=@item.Thumbnail />
+          <a href="/youtube/detail/@item.VideoId?keyword=@keyword"><p>@item.Title</p></a>
+          <br/>
+        </div>
+      }
+    }
+  </article>
+  <article>
+    @if (!string.IsNullOrWhiteSpace(responseMessage))
+    {
+      @responseMessage
+    }
+  </article>
+</section>
+
+
+@code{
+  public string keyword { get; set; }
+  public List<YouTubeVideoDTO> youtubeList;
+  public string responseMessage;
+
+  protected async override Task OnInitializedAsync()
+  {
+    youtubeList = new List<YouTubeVideoDTO>();
+    keyword = "";
+    responseMessage = "";
+    var queryStrings = navigationManager.GetQueryStrings(navigationManager.Uri);
+    if (queryStrings != null)
+    {
+      FillFilterWithQueryStrings(queryStrings);
+    }
+    Console.WriteLine($"keyword: {keyword}");
+    if (string.IsNullOrWhiteSpace(keyword))
+    {
+      return;
+    }
+    var response = await youtubeAPI.SearchYoutubeByKeyword(keyword);
+    if (!response.success)
+    {
+      responseMessage = response.responseMessage;
+      StateHasChanged();
+      return;
+    }
+    youtubeList = response.data;
+    StateHasChanged();
+  }
+
+  protected async override Task OnParametersSetAsync()
+  {
+
+  }
+
+  public async Task searchYoutube()
+  {
+    if (string.IsNullOrWhiteSpace(keyword))
+    {
+      return;
+    }
+    var response = await youtubeAPI.SearchYoutubeByKeyword(keyword);
+    if (!response.success)
+    {
+      responseMessage = response.responseMessage;
+      StateHasChanged();
+      return;
+    }
+    youtubeList = response.data;
+    StateHasChanged();
+    navigationManager.NavigateTo($"/?keyword={System.Web.HttpUtility.UrlEncode(keyword)}");
+  }
+
+  private void FillFilterWithQueryStrings(Dictionary<string, string> queryStrings)
+  {
+    if (queryStrings.ContainsKey("keyword"))
+    {
+      keyword=queryStrings["keyword"];
+    }
+  }
+
+  
+
+}

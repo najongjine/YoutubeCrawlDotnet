@@ -1,0 +1,99 @@
+﻿@page "/othervideos"
+@page "/othervideos/{_page:int}"
+@page "/othervideos/{_page:int}/{max:int}"
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@using Microsoft.AspNetCore.Authorization
+@using YoutubeCrawlDotnet.Shared.Config
+@attribute [Authorize(Roles = "jong")]
+
+<h3>OtherVideos</h3>
+<section>
+  <article>
+    <div>
+      <input type="radio" name="Type" value="All" @onchange="SelectionChanged"
+             checked=@(Type.Equals("ALL",StringComparison.OrdinalIgnoreCase))>
+      <label for="All">All</label>
+      &nbsp;
+      <input type="radio" name="Type" value="Anime" @onchange="SelectionChanged"
+             checked=@(Type.Equals("Anime",StringComparison.OrdinalIgnoreCase))>
+      <label for="Anime">Anime</label>
+      &nbsp;
+      <input type="radio" name="Type" value="Real" @onchange="SelectionChanged"
+             checked=@(Type.Equals("Real",StringComparison.OrdinalIgnoreCase))>
+      <label for="Real">Real</label>
+      &nbsp;
+    </div>
+  </article>
+</section>
+
+<section>
+  <article>
+    @if (otherVideos.Count > 0)
+    {
+      @foreach (var item in otherVideos)
+      {
+        <div>Id:&nbsp;@item.Id&nbsp;&nbsp;Order:&nbsp;&nbsp;@item.order &nbsp;&nbsp;Type:&nbsp;@item.Type</div>
+        <div><img src="@imgServer/api/Streaming/othervideoimg/@item.Id" style="max-width:15%;" /></div>
+        <a href="/otherwatch/@item.Id"><div>@item.TagString &nbsp; @item.Title</div></a>
+        <div>@item.CreatedAt</div>
+        <br />
+      }
+    }
+
+  </article>
+</section>
+<section>
+  <Pagination CurrentPage="_page" Radius="10" TotalAmountPages="pageCount" SelectedPage="SelectedPage" />
+</section>
+
+@code {
+  public string imgServer { get; set; } = Config.BaseURL;
+  public List<OtherVideoDTO> otherVideos { get; set; } = new List<OtherVideoDTO>();
+  private string _filter { get; set; }
+  [Parameter] public int _page { get; set; } = 1;
+  [Parameter] public int max { get; set; } = 200;
+  public int totalCount { get; set; }
+  public int pageCount { get; set; } = 1;
+  public long id { get; set; } = 0;
+
+  public string Type { get; set; } = "All";
+
+  protected async Task SelectionChanged(ChangeEventArgs args)
+  {
+    Type = args.Value.ToString();
+    await FetchDataAsync(_page, max);
+    StateHasChanged();
+  }
+
+
+  protected async override Task OnInitializedAsync()
+  {
+    if (max < 1)
+    {
+      max = 200;
+    }
+    if (_page < 1)
+    {
+      _page = 1;
+    }
+    await FetchDataAsync(_page, max);
+    StateHasChanged();
+  }
+  public async Task FetchDataAsync(int page, int max)
+  {
+    var response = await Http.GetFromJsonAsync<ResponseDTO<List<OtherVideoDTO>>>($"api/CrawlOtherVideos?type={Type}");
+    otherVideos = response.data;
+    totalCount = (int)response.totalData;
+    pageCount = (int)Math.Ceiling((decimal)totalCount / (decimal)max);
+    StateHasChanged();
+  }
+  public async Task SelectedPage(int page)
+  {
+    _page = page;
+    await FetchDataAsync(_page, max);
+    StateHasChanged();
+    navigationManager.NavigateTo($"/othervideos/{_page}");
+  }
+
+}

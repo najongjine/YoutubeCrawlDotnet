@@ -1,0 +1,54 @@
+﻿@page "/privatewatch/{id:long}"
+@inject NavigationManager navigationManager
+@inject HttpClient Http
+<h3>Watch</h3>
+<section>
+  <article>
+    <p>@videoDTO.Title</p>
+    <BlazoredVideo EndedEvent="OnEnded" autoplay=true controls=true style="max-width:90%;" >
+      <source src=@streamingUrl />
+    </BlazoredVideo>
+    <div>@videoDTO.CreatedAt</div>
+  </article>
+</section>
+@code {
+  [Parameter] public long id{ get; set; } = 0;
+  public VideoDTO videoDTO { get; set; } = new VideoDTO();
+  public string responseMessage { get; set; } = null;
+  public int code { get; set; } = 0;
+  public string streamingUrl = null;
+
+  protected async override Task OnInitializedAsync()
+  {
+    streamingUrl = $"/api/streaming/private/{id}";
+    var response = await Http.GetFromJsonAsync<ResponseDTO<VideoDTO>>($"api/PrivateVideos/{id}");
+    if (!response.success)
+    {
+      responseMessage = response.responseMessage;
+      await InvokeAsync(StateHasChanged);
+      return;
+    }
+    videoDTO = response.data;
+    Console.WriteLine($"## streaming url:{streamingUrl}");
+    await InvokeAsync(StateHasChanged);
+  }
+
+  private async Task OnEnded(VideoState state)
+  {
+    var response = await Http.GetFromJsonAsync<ResponseDTO<VideoDTO>>($"api/PrivateVideos/next/{videoDTO.Order}");
+    if (!response.success)
+    {
+      Console.WriteLine($"!!! {response.responseMessage}");
+      responseMessage = response.responseMessage;
+      StateHasChanged();
+      return;
+    }
+    videoDTO = response.data;
+    id = response.data.Id;
+
+    streamingUrl = $"/api/streaming/private/{id}";
+    navigationManager.NavigateTo($"/privatewatch/{id}",true);
+
+  }
+
+}

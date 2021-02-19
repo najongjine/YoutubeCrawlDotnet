@@ -1,0 +1,44 @@
+﻿@page "/otherwatch/{id:long}"
+@inject NavigationManager navigationManager
+@inject HttpClient Http
+<h3>Other Watch</h3>
+<section>
+  <article>
+    <p>@otherVideoDTO.TagString&nbsp;@otherVideoDTO.Title</p>
+    <BlazoredVideo EndedEvent="OnEnded" autoplay=true controls=true style="max-width:90%;" >
+      <source src=@streamingUrl />
+    </BlazoredVideo>
+    <div>@otherVideoDTO.CreatedAt</div>
+  </article>
+  <article>
+    <p>@responseMessage</p>
+  </article>
+</section>
+@code {
+  [Parameter] public long id{ get; set; } = 0;
+  public OtherVideoDTO otherVideoDTO { get; set; } = new OtherVideoDTO();
+  public string responseMessage { get; set; } = null;
+  public int code { get; set; } = 0;
+  public string streamingUrl = null;
+
+  protected async override Task OnInitializedAsync()
+  {
+    streamingUrl = $"/api/streaming/othervideo/{id}";
+    var response = await Http.GetFromJsonAsync<ResponseDTO<OtherVideoDTO>>($"api/CrawlOtherVideos/{id}");
+    if (!response.success)
+    {
+      responseMessage = response.responseMessage;
+      await InvokeAsync(StateHasChanged);
+      return;
+    }
+    otherVideoDTO = response.data;
+    Console.WriteLine($"## streaming url:{streamingUrl}");
+    await InvokeAsync(StateHasChanged);
+  }
+
+  private async Task OnEnded(VideoState state)
+  {
+
+  }
+
+}

@@ -1,0 +1,80 @@
+﻿@page "/youtube/detail/{videoId}"
+@inject NavigationManager navigationManager
+@inject HttpClient Http
+<h3>Youtube Detail</h3>
+
+<section>
+  <article>
+    <iframe src=@youtubeUrl width="500" height="400" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen />
+  </article>
+  <article>
+    @if (showCrawlButton)
+    {
+    <p>
+      crawl this video: <button @onclick="CrawlVideo">crawl this video</button>&nbsp Make It Private<input type="checkbox" @bind="bMakeItPrivate" />
+    </p>
+    }
+    @if (!string.IsNullOrWhiteSpace(responseMessage))
+    {
+      <p>@responseMessage</p>
+    }
+    @if (bCrawlSucceded)
+    {
+      <a href="/watch/@videoId?keyword=@keyword">Watch this video</a>
+    }
+  </article>
+</section>
+
+@code {
+  [Parameter] public string videoId { get; set; }
+  public string youtubeUrl { get; set; }
+  public string keyword { get; set; } = "";
+  public string responseMessage { get; set; }
+  public bool showCrawlButton { get; set; }
+  public bool bCrawlSucceded { get; set; }
+  public bool bMakeItPrivate { get; set; } = false;
+
+  protected async override Task OnInitializedAsync()
+  {
+    Console.WriteLine($"## videoid: {videoId}");
+    responseMessage = "";
+    var queryStrings = navigationManager.GetQueryStrings(navigationManager.Uri);
+    if (queryStrings != null)
+    {
+      FillFilterWithQueryStrings(queryStrings);
+    }
+    showCrawlButton = true;
+    bCrawlSucceded = false;
+    youtubeUrl = $"https://www.youtube.com/embed/{videoId}";
+    StateHasChanged();
+    Console.WriteLine($"keyword: {keyword}");
+  }
+
+  public async Task CrawlVideo()
+  {
+    showCrawlButton = false;
+    responseMessage = "crawling...";
+    StateHasChanged();
+    var response = await Http.GetFromJsonAsync<ResponseDTO<string>>($"api/YoutubeDownload/v2/{videoId}?inputStr={keyword}&bMakeItPrivate={bMakeItPrivate}");
+    if (!response.success)
+    {
+      responseMessage = response.responseMessage;
+      StateHasChanged();
+      return;
+    }
+
+    responseMessage = "crawl succeded";
+    bCrawlSucceded = true;
+    StateHasChanged();
+  }
+
+  private void FillFilterWithQueryStrings(Dictionary<string, string> queryStrings)
+  {
+    if (queryStrings.ContainsKey("keyword"))
+    {
+      keyword = queryStrings["keyword"];
+    }
+    StateHasChanged();
+  }
+
+}

@@ -1,0 +1,98 @@
+﻿@page "/getothervideos"
+@inject HttpClient Http
+@using YoutubeCrawlDotnet.Shared.DTOs.OtherVideoPage
+
+<h3>OtherVideos</h3>
+<section>
+  <article>
+    <form @onsubmit="CrawlVideoAsync">
+      <div>
+        <label>VideoUrl:&nbsp;</label><input @bind-value="VideoUrl" />
+        <label>Author:&nbsp;</label><input @bind-value="Author" />
+      </div>
+      <div>
+        <label>TagString:&nbsp;</label><input @bind-value="TagString" />
+        <label>SiteName:&nbsp;</label><input @bind-value="SiteName" />
+      </div>
+      <div>
+        <input type="radio" name="Type" value="Real" @onchange="SelectionChanged"
+               checked=@(Type.Equals("ALL",StringComparison.OrdinalIgnoreCase))>
+        <label for="All">Real</label>
+        &nbsp;
+        <input type="radio" name="Type" value="Anime" @onchange="SelectionChanged"
+               checked=@(Type.Equals("Anime",StringComparison.OrdinalIgnoreCase))>
+        <label for="Anime">Anime</label>
+        &nbsp;
+      </div>
+      <div>
+        <button>Crawl Video</button>
+      </div>
+    </form>
+  </article>
+  <article>
+    <p>
+      @guideMessage
+    </p>
+    <p>
+      @if(bFinishedCrawl && otherVideoId > 0)
+      {
+        <a href="/watchother/@otherVideoId">Watch Crawled Video</a>
+      }
+    </p>
+  </article>
+</section>
+
+@code {
+  public long otherVideoId { get; set; } = 0;
+  public string VideoUrl { get; set; } = null;
+  public string Type { get; set; } = "Anime";
+  public string Author { get; set; } = "undefined";
+  public string SiteName { get; set; } = "undifined";
+  public string TagString { get; set; } = "";
+  public bool bFinishedCrawl { get; set; } = false;
+  public string guideMessage { get; set; } = "";
+  public string responseMessage { get; set; } = "";
+  protected async override Task OnInitializedAsync()
+  {
+
+  }
+  public async Task CrawlVideoAsync()
+  {
+    if (string.IsNullOrWhiteSpace(VideoUrl))
+    {
+      return;
+    }
+    bFinishedCrawl = false;
+    guideMessage = "crawling video...";
+    responseMessage = "";
+    otherVideoId = 0;
+    StateHasChanged();
+    var response = await Http.PostAsJsonAsync($"api/crawlothervideos", new CrawlOtherVideoDTO { Author = this.Author, SiteName = this.SiteName, TagString = this.TagString, VideoUrl = this.VideoUrl ,Type=this.Type});
+    if (response.IsSuccessStatusCode)
+    {
+      var responseString = await response.Content.ReadAsStringAsync();
+      var responseJson = JsonSerializer.Deserialize<ResponseDTO<long>>(responseString);
+      if (responseJson.success)
+      {
+        otherVideoId = responseJson.data;
+        guideMessage = "Crawling Finished";
+        bFinishedCrawl = true;
+        VideoUrl = "";
+        StateHasChanged();
+        return;
+      }
+      guideMessage = "";
+      responseMessage = responseJson.responseMessage;
+      StateHasChanged();
+      return;
+    }
+    guideMessage = "crawling went something wrong...";
+    StateHasChanged();
+  }
+  protected async Task SelectionChanged(ChangeEventArgs args)
+  {
+    Type = args.Value.ToString();
+    StateHasChanged();
+  }
+
+}

@@ -1,0 +1,67 @@
+﻿@page "/privateVideos"
+@page "/privateVideos/{_page:int}"
+@page "/privateVideos/{_page:int}/{max:int}"
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "jong")]
+
+<h3>Private Videos</h3>
+<section>
+  <article>
+    @if (privateVideos.Count > 0)
+    {
+      @foreach (var item in privateVideos)
+      {
+        <div>@item.Order &nbsp;</div>
+        <div><img src="@item.ThumbnailDefault" style="max-width:15%;" /></div>
+        <a href="/privatewatch/@item.Id"><div>@item.Title</div></a>
+        <div>@item.CreatedAt</div>
+        <br />
+      }
+    }
+
+  </article>
+</section>
+<section>
+  <Pagination CurrentPage="_page" Radius="10" TotalAmountPages="pageCount" SelectedPage="SelectedPage" />
+</section>
+@code {
+  public List<VideoDTO> privateVideos { get; set; } = new List<VideoDTO>();
+  public long id { get; set; } = 0;
+  private string _filter { get; set; }
+  [Parameter] public int _page { get; set; } = 1;
+  [Parameter] public int max { get; set; } = 200;
+  public int totalCount { get; set; }
+  public int pageCount { get; set; } = 1;
+
+  protected async override Task OnInitializedAsync()
+  {
+    if (max < 1)
+    {
+      max = 200;
+    }
+    if (_page < 1)
+    {
+      _page = 1;
+    }
+    await FetchDataAsync(_page, max);
+    StateHasChanged();
+  }
+  public async Task FetchDataAsync(int page, int max)
+  {
+    var response = await Http.GetFromJsonAsync<ResponseDTO<List<VideoDTO>>>($"api/privatevideos");
+    privateVideos = response.data;
+    totalCount = (int)response.totalData;
+    pageCount = (int)Math.Ceiling((decimal)totalCount / (decimal)max);
+    StateHasChanged();
+  }
+  public async Task SelectedPage(int page)
+  {
+    _page = page;
+    await FetchDataAsync(_page, max);
+    StateHasChanged();
+    navigationManager.NavigateTo($"/privateVideos/{_page}");
+  }
+
+}

@@ -1,0 +1,83 @@
+﻿@page "/watch/{videoId}"
+@using YoutubeCrawlDotnet.Shared.DTOs.PublicWatchPage
+@inject NavigationManager navigationManager
+@inject HttpClient Http
+<h3>Watch</h3>
+<section>
+  <article>
+    <p>@videoDTO.Title</p>
+    <BlazoredVideo EndedEvent="OnEnded" autoplay=true controls=true style="max-width:90%;">
+      <source src=@streamingUrl />
+    </BlazoredVideo>
+    <div>@videoDTO.CreatedAt</div>
+  </article>
+  <article>
+    <form @onsubmit="ChangeOrderAsync">
+      <span>
+        <label>Current Order: &nbsp; @currentOrder</label>&nbsp;<input @bind="wantToChangeToThisOrder" type="number" min="1" placeholder="type number and press enter to change order" />
+        <button>change order</button>
+      </span>
+    </form>
+  </article>
+</section>
+@code {
+  [Parameter] public string videoId { get; set; } = null;
+  public VideoDTO videoDTO { get; set; } = new VideoDTO();
+  public string responseMessage { get; set; } = null;
+  public int code { get; set; } = 0;
+  public long currentOrder { get; set; }
+  public long wantToChangeToThisOrder { get; set; } = 0;
+  public string streamingUrl = null;
+
+  protected async override Task OnInitializedAsync()
+  {
+    streamingUrl = $"/api/streaming/{videoId}";
+    var response = await Http.GetFromJsonAsync<ResponseDTO<VideoDTO>>($"api/PublicVideos/{videoId}");
+    if (!response.success)
+    {
+      responseMessage = response.responseMessage;
+      await InvokeAsync(StateHasChanged);
+      return;
+    }
+    videoDTO = response.data;
+    currentOrder = videoDTO.Order;
+    await InvokeAsync(StateHasChanged);
+  }
+
+  private async Task OnEnded(VideoState state)
+  {
+    var response = await Http.GetFromJsonAsync<ResponseDTO<VideoDTO>>($"api/PublicVideos/next/{videoDTO.Order}");
+    if (!response.success)
+    {
+      Console.WriteLine($"!!! {response.responseMessage}");
+      responseMessage = response.responseMessage;
+      StateHasChanged();
+      return;
+    }
+    videoDTO = response.data;
+    videoId = response.data.VideoId;
+
+    streamingUrl = $"/api/streaming/{videoId}";
+    navigationManager.NavigateTo($"/watch/{videoId}", true);
+
+  }
+
+  public async Task ChangeOrderAsync()
+  {
+    Console.WriteLine($"change order activated");
+    if (wantToChangeToThisOrder < 1)
+    {
+      return;
+    }
+    var response = await Http.PutAsJsonAsync($"api/PublicVideos/changeorder?", new ChangeOrderDTO { currentOrder = this.currentOrder, wantToChangeToThisOrder = this.wantToChangeToThisOrder });
+    var responseString = await response.Content.ReadAsStringAsync();
+    var responseJson = JsonSerializer.Deserialize<ResponseDTO<long>>(responseString);
+
+    Console.WriteLine($"response in order change : {await response.Content.ReadAsStringAsync()}");
+    if (responseJson.success)
+    {
+      currentOrder = responseJson.data;
+    }
+  }
+
+}
