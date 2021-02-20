@@ -31,7 +31,7 @@
 
   protected async override Task OnInitializedAsync()
   {
-    streamingUrl = $"/api/streaming/{videoId}";
+    streamingUrl = $"api/streaming/{videoId}";
     var response = await Http.GetFromJsonAsync<ResponseDTO<VideoDTO>>($"api/PublicVideos/{videoId}");
     if (!response.success)
     {

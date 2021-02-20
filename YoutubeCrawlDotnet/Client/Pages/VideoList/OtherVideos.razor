@@ -34,7 +34,7 @@
       @foreach (var item in otherVideos)
       {
         <div>Id:&nbsp;@item.Id&nbsp;&nbsp;Order:&nbsp;&nbsp;@item.order &nbsp;&nbsp;Type:&nbsp;@item.Type</div>
-        <div><img src="@imgServer/api/Streaming/othervideoimg/@item.Id" style="max-width:15%;" /></div>
+        <div><img src="api/Streaming/othervideoimg/@item.Id" style="max-width:15%;" /></div>
         <a href="/otherwatch/@item.Id"><div>@item.TagString &nbsp; @item.Title</div></a>
         <div>@item.CreatedAt</div>
         <br />
@@ -48,7 +48,6 @@
 </section>
 
 @code {
-  public string imgServer { get; set; } = Config.BaseURL;
   public List<OtherVideoDTO> otherVideos { get; set; } = new List<OtherVideoDTO>();
   private string _filter { get; set; }
   [Parameter] public int _page { get; set; } = 1;
