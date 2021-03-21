@@ -9,7 +9,7 @@ namespace YoutubeCrawlDotnet.Shared.Config
   {
     public static readonly string PhysicalFilePath = "H:/crawled";
     public static readonly string OtherVideoPhysicalFilePath = "H:/OtherCrawled";
-    public static readonly string YoutubeApiKey = "AIzaSyAPB2pk6mIb0Ag1H5qxymTyTHtkZtRIvg8";
+    public static readonly string YoutubeApiKey = "aAIzaSyAPB2pk6mIb0Ag1H5qxymTyTHtkZtRIvg8a";
     public static readonly String YoutubeAPIBaseURL = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1000";
   }
 }
