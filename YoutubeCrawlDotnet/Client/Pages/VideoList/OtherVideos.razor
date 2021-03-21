@@ -51,7 +51,7 @@
   public List<OtherVideoDTO> otherVideos { get; set; } = new List<OtherVideoDTO>();
   private string _filter { get; set; }
   [Parameter] public int _page { get; set; } = 1;
-  [Parameter] public int max { get; set; } = 200;
+  [Parameter] public int max { get; set; } = 100;
   public int totalCount { get; set; }
   public int pageCount { get; set; } = 1;
   public long id { get; set; } = 0;
@@ -70,7 +70,7 @@
   {
     if (max < 1)
     {
-      max = 200;
+      max = 100;
     }
     if (_page < 1)
     {
@@ -81,7 +81,7 @@
   }
   public async Task FetchDataAsync(int page, int max)
   {
-    var response = await Http.GetFromJsonAsync<ResponseDTO<List<OtherVideoDTO>>>($"api/CrawlOtherVideos?type={Type}");
+    var response = await Http.GetFromJsonAsync<ResponseDTO<List<OtherVideoDTO>>>($"api/CrawlOtherVideos?type={Type}&page={_page}&max={max}");
     otherVideos = response.data;
     totalCount = (int)response.totalData;
     pageCount = (int)Math.Ceiling((decimal)totalCount / (decimal)max);

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace YoutubeCrawlDotnet.Server.Controllers
 {
   [Route("api/[controller]")]
   [ApiController]
+  [Authorize(Roles = "jong")]
   public class CrawlOtherVideosController : ControllerBase
   {
     private readonly CleanString CleanString;

@@ -32,6 +32,7 @@
     }
 
     CurrentPage = link.Page;
+    Console.WriteLine("## CurrentPage: " + CurrentPage);
     await SelectedPage.InvokeAsync(link.Page);
   }
 

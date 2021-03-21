@@ -46,7 +46,7 @@
     await FetchDataAsync(_page, max);
     StateHasChanged();
   }
-  public async Task FetchDataAsync(int page, int max)
+  public async Task FetchDataAsync(int page=1, int max=200)
   {
     var response = await Http.GetFromJsonAsync<ResponseDTO<List<VideoDTO>>>($"api/PublicVideos?page={page}&max={max}");
     publicVideos = response.data;
@@ -54,7 +54,7 @@
     pageCount =(int) Math.Ceiling((decimal)totalCount / (decimal)max);
     StateHasChanged();
   }
-  public async Task SelectedPage(int page)
+  public async Task SelectedPage(int page=1)
   {
     _page = page;
     await FetchDataAsync(_page, max);

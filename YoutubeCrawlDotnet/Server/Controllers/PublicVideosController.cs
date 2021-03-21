@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,6 +14,7 @@ namespace YoutubeCrawlDotnet.Server.Controllers
 {
   [ApiController]
   [Route("api/[controller]")]
+  [AllowAnonymous]
   public class PublicVideosController : ControllerBase
   {
     private readonly ApplicationDbContext dbContext;
@@ -23,9 +26,12 @@ namespace YoutubeCrawlDotnet.Server.Controllers
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ResponseDTO<List<VideoDTO>>> PublicVideosAsync([FromQuery] int page = 1, [FromQuery] int max = 50000)
     {
-      List<VideoDTO> publicVideoDTOList = await publicVideoManager.getAllPublicVideosAsync(page, max);
+      page = page < 1 ? 1:page;
+      Console.WriteLine("## page: " + page);
+      List<VideoDTO> publicVideoDTOList = await publicVideoManager.getAllPublicVideosAsync(page , max);
       return new ResponseDTO<List<VideoDTO>>
       {
         currentPage = page,
@@ -37,6 +43,7 @@ namespace YoutubeCrawlDotnet.Server.Controllers
     }
 
     [HttpGet("{videoId}")]
+    [AllowAnonymous]
     public async Task<ResponseDTO<VideoDTO>> Get(string videoId)
     {
       if (string.IsNullOrWhiteSpace(videoId))
@@ -58,6 +65,7 @@ namespace YoutubeCrawlDotnet.Server.Controllers
     }
 
     [HttpGet("next/{order}")]
+    [AllowAnonymous]
     public async Task<ResponseDTO<VideoDTO>> GetNextOrderPublicVideoAsync(int order = 0)
     {
       if (order < 1)

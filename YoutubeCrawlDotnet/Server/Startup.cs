@@ -6,6 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
 using YoutubeCrawlDotnet.Server.Data;
 using YoutubeCrawlDotnet.Server.Helper;
 using YoutubeCrawlDotnet.Server.Helpers;
@@ -36,8 +39,21 @@ namespace YoutubeCrawlDotnet.Server
       services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false).AddRoles<IdentityRole>()
           .AddEntityFrameworkStores<ApplicationDbContext>();
 
+      /*
       services.AddIdentityServer()
           .AddApiAuthorization<ApplicationUser, ApplicationDbContext>().AddProfileService<IdentityProfileService>();
+      */
+      services.AddIdentityServer()
+    .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options => {
+      options.IdentityResources["openid"].UserClaims.Add("name");
+      options.ApiResources.Single().UserClaims.Add("name");
+      options.IdentityResources["openid"].UserClaims.Add("role");
+      options.ApiResources.Single().UserClaims.Add("role");
+    });
+
+      JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Remove("role");
+      services.Configure<IdentityOptions>(options =>
+    options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier);
 
       services.AddAuthentication()
           .AddIdentityServerJwt();

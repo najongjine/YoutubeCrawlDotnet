@@ -57,7 +57,6 @@ namespace YoutubeCrawlDotnet.Server.Controllers
       string thumbnailDefault = videoInfo.Thumbnails.StandardResUrl;
       string thumbnailMedium = videoInfo.Thumbnails.MediumResUrl;
       string thumbnailHigh = videoInfo.Thumbnails.HighResUrl;
-      string keyword = CleanString.RemoveEmojisSChars(videoInfo.Keywords[0]);
       var duration = videoInfo.Duration;
 
       var streamManifest = await youtube.Videos.Streams.GetManifestAsync(youtubeUrlId);
@@ -65,9 +64,9 @@ namespace YoutubeCrawlDotnet.Server.Controllers
       var videoStreamInfo = streamManifest.GetVideoOnly().FirstOrDefault(s => s.VideoQualityLabel == "1080p60")
         ?? streamManifest.GetVideo().WithHighestVideoQuality();
 
-      if (System.IO.File.Exists($"{Config.PhysicalFilePath}/{inputStr}/{title}.{videoStreamInfo.Container}") ||
-        System.IO.File.Exists($"{Config.PhysicalFilePath}/{inputStr}/{title}.{videoStreamInfo.Container}..stream-1.tmp") ||
-        System.IO.File.Exists($"{Config.PhysicalFilePath}/{inputStr}/{title}.{videoStreamInfo.Container}..stream-2.tmp")
+      if (System.IO.File.Exists($"{Config.PhysicalFilePath}/{inputStr.Trim()}/{title}.{videoStreamInfo.Container}") ||
+        System.IO.File.Exists($"{Config.PhysicalFilePath}/{inputStr.Trim()}/{title}.{videoStreamInfo.Container}..stream-1.tmp") ||
+        System.IO.File.Exists($"{Config.PhysicalFilePath}/{inputStr.Trim()}/{title}.{videoStreamInfo.Container}..stream-2.tmp")
         )
       {
         return new ResponseDTO<string>
@@ -84,18 +83,19 @@ namespace YoutubeCrawlDotnet.Server.Controllers
       //var streamInfo = streamManifest.GetMuxed().WithHighestVideoQuality();
       if (streamInfos != null)
       {
-        if (!System.IO.Directory.Exists($"{downloadPath}/{inputStr}"))
+        if (!System.IO.Directory.Exists($"{downloadPath}/{inputStr.Trim()}"))
         {
-          System.IO.Directory.CreateDirectory($"{downloadPath}/{inputStr}");
+          System.IO.Directory.CreateDirectory($"{downloadPath}/{inputStr.Trim()}");
         }
         // Get the actual stream
         //var stream = await youtube.Videos.Streams.GetAsync(streamInfos);
 
         // Download the stream to file
         //await youtube.Videos.Streams.DownloadAsync(streamInfos, $"{downloadPath}/{title}.{streamInfo.Container}");
-        string path = $"{inputStr}";
-        string fileName = $"{title}.{videoStreamInfo.Container}";
-        string fullPath = $"{inputStr}/{title}.{videoStreamInfo.Container}";
+        string timeStr = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+        string path = $"{inputStr.Trim()}";
+        string fileName = $"{timeStr}_{title}.{videoStreamInfo.Container}";
+        string fullPath = $"{path}/{fileName}";
         await youtube.Videos.DownloadAsync(streamInfos, new ConversionRequestBuilder($"{downloadPath}/{fullPath}").Build());
 
         try
@@ -244,6 +244,13 @@ namespace YoutubeCrawlDotnet.Server.Controllers
       string fileName = splitedPath[splitedPath.Length - 1];
       string fullPath = $"{inputStr}/{fileName}";
 
+      string timeStr = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+
+      string newFileName = timeStr + fileName;
+      string newFullPath = $"{folder}/{newFileName}";
+
+      System.IO.File.Move($"{Config.PhysicalFilePath}/{fullPath}", $"{Config.PhysicalFilePath}/{newFullPath}");
+
       try
       {
         Crawled crawled = new Crawled
@@ -251,8 +258,8 @@ namespace YoutubeCrawlDotnet.Server.Controllers
           ChannelId = channelId,
           CreatedAt = DateTime.UtcNow,
           Description = description,
-          FileName = fileName,
-          FullPath = fullPath,
+          FileName = newFileName,
+          FullPath = newFullPath,
           Path = folder,
           PublishedAt = publishedAt,
           ThumbnailDefault = thumbnailDefault,
