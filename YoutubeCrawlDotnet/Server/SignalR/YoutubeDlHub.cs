@@ -20,9 +20,9 @@ namespace YoutubeCrawlDotnet.Server.SignalR
       await base.OnDisconnectedAsync(e);
     }
 
-    public async Task sendDlProgress( float progress)
+    public async Task sendDlProgress(string connId, float progress,string totalData)
     {
-      await Clients.All.SendAsync("sendDlProgress", progress);
+      await Clients.Client(connId).SendAsync("sendDlProgress", progress, totalData);
     }
   }
 }

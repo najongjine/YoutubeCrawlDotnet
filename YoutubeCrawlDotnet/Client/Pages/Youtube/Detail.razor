@@ -37,6 +37,7 @@
   public bool bCrawlSucceded { get; set; }
   public bool bMakeItPrivate { get; set; } = false;
   private float progress { get; set; } = 0;
+  private string totalData { get; set; }
 
   private HubConnection hubConnection;
 
@@ -46,10 +47,11 @@
             .WithUrl(navigationManager.ToAbsoluteUri("/youtubedlhub"))
             .Build();
 
-    hubConnection.On<float>("sendDlProgress", (float _progress) =>
+    hubConnection.On<float,string>("sendDlProgress", (float _progress,string _totalData) =>
     {
-      Console.WriteLine($"## recieved {_progress}");
+      //Console.WriteLine($"## recieved {_progress}");
       progress += _progress;
+      totalData = _totalData;
       StateHasChanged();
     });
 

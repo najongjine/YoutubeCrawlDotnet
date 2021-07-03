@@ -251,7 +251,7 @@ namespace YoutubeCrawlDotnet.Server.Controllers
       // a progress handler with a callback that updates a progress bar
       progress = new Progress<DownloadProgress>(p => {
         Console.WriteLine($"## progress: {p.Progress}");
-        _azureMediaHub.Clients.All.SendAsync("sendDlProgress", p.Progress); });
+        _azureMediaHub.Clients.All.SendAsync("sendDlProgress", p.Progress, p.TotalDownloadSize); });
       // a cancellation token source used for cancelling the download
       // use `cts.Cancel();` to perform cancellation
       var cts = new CancellationTokenSource();
