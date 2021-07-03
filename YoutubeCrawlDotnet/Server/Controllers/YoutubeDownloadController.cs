@@ -1,13 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using YoutubeCrawlDotnet.Server.Helper;
 using YoutubeCrawlDotnet.Server.Manager;
+using YoutubeCrawlDotnet.Server.SignalR;
 using YoutubeCrawlDotnet.Shared.Config;
 using YoutubeCrawlDotnet.Shared.DTOs;
 using YoutubeCrawlDotnet.Shared.Entities;
@@ -25,15 +28,21 @@ namespace YoutubeCrawlDotnet.Server.Controllers
   {
     private readonly CleanString CleanString;
     private readonly IYoutubeDownloadManager youtubeDownloadManager;
-    public YoutubeDownloadController(CleanString CleanString, IYoutubeDownloadManager youtubeDownloadManager)
+    private IHubContext<YoutubeDlHub> _azureMediaHub;
+
+    private IProgress<DownloadProgress> progress;
+    private IProgress<string> output;
+    public YoutubeDownloadController(CleanString CleanString, IYoutubeDownloadManager youtubeDownloadManager, IHubContext<YoutubeDlHub> azureMediaHub)
     {
       this.CleanString = CleanString;
       this.youtubeDownloadManager = youtubeDownloadManager;
+      _azureMediaHub = azureMediaHub;
     }
 
     [HttpGet("{youtubeUrlId}")]
     public async Task<ResponseDTO<string>> Get(string youtubeUrlId = "", [FromQuery] string inputStr = "undefined", [FromQuery] bool bMakeItPrivate = false)
     {
+      /*
       var crawledVideo = youtubeDownloadManager.getCrawledByYoutubeVideoId(youtubeUrlId);
       if (crawledVideo != null)
       {
@@ -51,12 +60,12 @@ namespace YoutubeCrawlDotnet.Server.Controllers
       var videoInfo = await youtube.Videos.GetAsync(youtubeLink);
       string publishedAt = videoInfo.UploadDate.ToString();
       string title = CleanString.RemoveEmojisSChars(videoInfo.Title);
-      string author = CleanString.RemoveEmojisSChars(videoInfo.Author);
+      string author = CleanString.RemoveEmojisSChars(videoInfo.Author.ToString());
       string description = CleanString.RemoveEmojisSChars(videoInfo.Description);
-      string channelId = videoInfo.ChannelId;
-      string thumbnailDefault = videoInfo.Thumbnails.StandardResUrl;
-      string thumbnailMedium = videoInfo.Thumbnails.MediumResUrl;
-      string thumbnailHigh = videoInfo.Thumbnails.HighResUrl;
+      string channelId = videoInfo.Author.ChannelId;
+      string thumbnailDefault ="dummy";
+      string thumbnailMedium = "dummy";
+      string thumbnailHigh = "dummy";
       var duration = videoInfo.Duration;
 
       var streamManifest = await youtube.Videos.Streams.GetManifestAsync(youtubeUrlId);
@@ -152,11 +161,13 @@ namespace YoutubeCrawlDotnet.Server.Controllers
           };
         }
       }
+      */
       return new ResponseDTO<string>
       {
         success = true,
         data = youtubeUrlId,
       };
+      
     }
 
     [HttpGet("youtube")]
@@ -201,7 +212,7 @@ namespace YoutubeCrawlDotnet.Server.Controllers
 
 
     [HttpGet("v2/{youtubeUrlId}")]
-    public async Task<ResponseDTO<string>> SaveVideoToDisk(string youtubeUrlId = null, [FromQuery] string inputStr = "undefined", [FromQuery] bool bMakeItPrivate = false)
+    public async Task<ResponseDTO<string>> SaveVideoToDisk(string youtubeUrlId = null, [FromQuery] string inputStr = "undefined", [FromQuery] bool bMakeItPrivate = false,[FromQuery] string signalRConnId="")
     {
       inputStr=CleanString.RemoveEmojisSChars(inputStr);
       string videoId = youtubeUrlId;
@@ -236,7 +247,16 @@ namespace YoutubeCrawlDotnet.Server.Controllers
       string description = data.Data.Description;
       string channelId = data.Data.ChannelID;
       string thumbnailDefault = data.Data.Thumbnail;
-      var res = await ytdl.RunVideoDownload(url:url);
+
+      // a progress handler with a callback that updates a progress bar
+      progress = new Progress<DownloadProgress>(p => {
+        Console.WriteLine($"## progress: {p.Progress}");
+        _azureMediaHub.Clients.All.SendAsync("sendDlProgress", p.Progress); });
+      // a cancellation token source used for cancelling the download
+      // use `cts.Cancel();` to perform cancellation
+      var cts = new CancellationTokenSource();
+
+      var res = await ytdl.RunVideoDownload(url:url, progress: progress, output: output);
       // the path of the downloaded file
       string path = res.Data;
       var splitedPath = path.Split("\\");

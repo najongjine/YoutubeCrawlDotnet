@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,7 @@ using YoutubeCrawlDotnet.Server.Helper;
 using YoutubeCrawlDotnet.Server.Helpers;
 using YoutubeCrawlDotnet.Server.Manager;
 using YoutubeCrawlDotnet.Server.Models;
+using YoutubeCrawlDotnet.Server.SignalR;
 
 namespace YoutubeCrawlDotnet.Server
 {
@@ -30,6 +32,7 @@ namespace YoutubeCrawlDotnet.Server
     // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
     public void ConfigureServices(IServiceCollection services)
     {
+      services.AddSignalR();
       services.AddDbContext<ApplicationDbContext>(options =>
           options.UseSqlServer(
               Configuration.GetConnectionString("DefaultConnection")));
@@ -66,11 +69,19 @@ namespace YoutubeCrawlDotnet.Server
       services.AddScoped<IPublicVideoManager, PublicVideoManager>();
       services.AddScoped<IPrivateVideoManager, PrivateVideoManager>();
       services.AddScoped<IOtherVideoManager, OtherVideoManager>();
+
+      services.AddResponseCompression(opts =>
+      {
+        opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+            new[] { "application/octet-stream" });
+      });
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+      app.UseResponseCompression();
+
       if (env.IsDevelopment())
       {
         app.UseDeveloperExceptionPage();
@@ -97,6 +108,7 @@ namespace YoutubeCrawlDotnet.Server
       {
         endpoints.MapRazorPages();
         endpoints.MapControllers();
+        endpoints.MapHub<YoutubeDlHub>("/youtubedlhub");
         endpoints.MapFallbackToFile("index.html");
       });
     }

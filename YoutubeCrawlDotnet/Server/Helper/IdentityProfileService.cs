@@ -12,51 +12,51 @@ using YoutubeCrawlDotnet.Server.Models;
 
 namespace YoutubeCrawlDotnet.Server.Helpers
 {
-    public class IdentityProfileService : IProfileService
+  public class IdentityProfileService : IProfileService
+  {
+    private readonly IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory;
+    private readonly UserManager<ApplicationUser> userManager;
+
+    public IdentityProfileService(IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory,
+        UserManager<ApplicationUser> userManager)
     {
-        private readonly IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory;
-        private readonly UserManager<ApplicationUser> userManager;
-
-        public IdentityProfileService(IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory,
-            UserManager<ApplicationUser> userManager)
-        {
-            this.claimsFactory = claimsFactory;
-            this.userManager = userManager;
-        }
-
-        public async Task GetProfileDataAsync(ProfileDataRequestContext context)
-        {
-            var userId = context.Subject.GetSubjectId();
-            var user = await userManager.FindByIdAsync(userId);
-            var claimsPrincipal = await claimsFactory.CreateAsync(user);
-            var claims = claimsPrincipal.Claims.ToList();
-
-            var claimsDB = await userManager.GetClaimsAsync(user);
-
-            var mappedClaims = new List<Claim>();
-
-            foreach (var claim in claimsDB)
-            {
-                if (claim.Type == ClaimTypes.Role)
-                {
-                    mappedClaims.Add(new Claim(JwtClaimTypes.Role, claim.Value));
-                }
-                else
-                {
-                    mappedClaims.Add(claim);
-                }
-            }
-
-            claims.AddRange(mappedClaims);
-
-            context.IssuedClaims = claims;
-        }
-
-        public async Task IsActiveAsync(IsActiveContext context)
-        {
-            var userId = context.Subject.GetSubjectId();
-            var user = await userManager.FindByIdAsync(userId);
-            context.IsActive = user != null;
-        }
+      this.claimsFactory = claimsFactory;
+      this.userManager = userManager;
     }
+
+    public async Task GetProfileDataAsync(ProfileDataRequestContext context)
+    {
+      var userId = context.Subject.GetSubjectId();
+      var user = await userManager.FindByIdAsync(userId);
+      var claimsPrincipal = await claimsFactory.CreateAsync(user);
+      var claims = claimsPrincipal.Claims.ToList();
+
+      var claimsDB = await userManager.GetClaimsAsync(user);
+
+      var mappedClaims = new List<Claim>();
+
+      foreach (var claim in claimsDB)
+      {
+        if (claim.Type == ClaimTypes.Role)
+        {
+          mappedClaims.Add(new Claim(JwtClaimTypes.Role, claim.Value));
+        }
+        else
+        {
+          mappedClaims.Add(claim);
+        }
+      }
+
+      claims.AddRange(mappedClaims);
+
+      context.IssuedClaims = claims;
+    }
+
+    public async Task IsActiveAsync(IsActiveContext context)
+    {
+      var userId = context.Subject.GetSubjectId();
+      var user = await userManager.FindByIdAsync(userId);
+      context.IsActive = user != null;
+    }
+  }
 }

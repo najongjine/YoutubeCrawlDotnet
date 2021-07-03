@@ -34,7 +34,7 @@
       @guideMessage
     </p>
     <p>
-      @if(bFinishedCrawl && otherVideoId > 0)
+      @if (bFinishedCrawl && otherVideoId > 0)
       {
         <a href="/watchother/@otherVideoId">Watch Crawled Video</a>
       }
@@ -67,7 +67,7 @@
     responseMessage = "";
     otherVideoId = 0;
     StateHasChanged();
-    var response = await Http.PostAsJsonAsync($"api/crawlothervideos", new CrawlOtherVideoDTO { Author = this.Author, SiteName = this.SiteName, TagString = this.TagString, VideoUrl = this.VideoUrl ,Type=this.Type});
+    var response = await Http.PostAsJsonAsync($"api/crawlothervideos", new CrawlOtherVideoDTO { Author = this.Author, SiteName = this.SiteName, TagString = this.TagString, VideoUrl = this.VideoUrl, Type = this.Type });
     if (response.IsSuccessStatusCode)
     {
       var responseString = await response.Content.ReadAsStringAsync();
