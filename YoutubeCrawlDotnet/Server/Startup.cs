@@ -12,7 +12,6 @@ using System.Linq;
 using System.Security.Claims;
 using YoutubeCrawlDotnet.Server.Data;
 using YoutubeCrawlDotnet.Server.Helper;
-using YoutubeCrawlDotnet.Server.Helpers;
 using YoutubeCrawlDotnet.Server.Manager;
 using YoutubeCrawlDotnet.Server.Models;
 using YoutubeCrawlDotnet.Server.SignalR;

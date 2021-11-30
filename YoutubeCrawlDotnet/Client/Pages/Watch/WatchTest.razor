@@ -1,0 +1,28 @@
+﻿@page "/watchtest"
+@using YoutubeCrawlDotnet.Shared.DTOs.PublicWatchPage
+@inject NavigationManager navigationManager
+@inject HttpClient Http
+<h3>WatchTest</h3>
+<section>
+  <article>
+    <video src="http://najongjine-001-site1.ftempurl.com/api/streaming/test1" width="80%" controls="controls" autoplay="autoplay"/>
+  </article>
+
+</section>
+@code {
+  public string streamingUrl = "http://najongjine-001-site1.ftempurl.com/api/streaming/test1";
+
+  protected async override Task OnInitializedAsync()
+  {
+
+  }
+
+  private async Task OnEnded(VideoState state)
+  {
+
+
+  }
+
+
+
+}

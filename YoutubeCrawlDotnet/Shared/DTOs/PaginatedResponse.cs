@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlazorMovies.Shared.DTOs
+namespace YoutubeCrawlDotnet.Shared.DTOs
 {
     public class PaginatedResponse<T>
     {
