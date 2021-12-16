@@ -42,7 +42,7 @@ namespace YoutubeCrawlDotnet.Server.Controllers
     [HttpGet("{youtubeUrlId}")]
     public async Task<ResponseDTO<string>> Get(string youtubeUrlId = "", [FromQuery] string inputStr = "undefined", [FromQuery] bool bMakeItPrivate = false)
     {
-      /*
+      
       var crawledVideo = youtubeDownloadManager.getCrawledByYoutubeVideoId(youtubeUrlId);
       if (crawledVideo != null)
       {
@@ -70,8 +70,16 @@ namespace YoutubeCrawlDotnet.Server.Controllers
 
       var streamManifest = await youtube.Videos.Streams.GetManifestAsync(youtubeUrlId);
 
-      var videoStreamInfo = streamManifest.GetVideoOnly().FirstOrDefault(s => s.VideoQualityLabel == "1080p60")
-        ?? streamManifest.GetVideo().WithHighestVideoQuality();
+            IVideoStreamInfo videoStreamInfo = null;
+            try
+            {
+                videoStreamInfo = streamManifest.GetVideoStreams().First(s => s.VideoQuality.Label == "1080p60");
+            }
+            catch (Exception ex)
+            {
+                videoStreamInfo= streamManifest.GetVideoStreams().GetWithHighestVideoQuality();
+            }
+            
 
       if (System.IO.File.Exists($"{Config.PhysicalFilePath}/{inputStr.Trim()}/{title}.{videoStreamInfo.Container}") ||
         System.IO.File.Exists($"{Config.PhysicalFilePath}/{inputStr.Trim()}/{title}.{videoStreamInfo.Container}..stream-1.tmp") ||
@@ -86,9 +94,9 @@ namespace YoutubeCrawlDotnet.Server.Controllers
         };
       }
 
-      var audioStreamInfo = streamManifest.GetAudio().WithHighestBitrate();
+      var audioStreamInfo = streamManifest.GetAudioStreams().GetWithHighestBitrate();
 
-      var streamInfos = new IStreamInfo[] { audioStreamInfo, videoStreamInfo };
+            var streamInfos = new IStreamInfo[] { audioStreamInfo, videoStreamInfo };
       //var streamInfo = streamManifest.GetMuxed().WithHighestVideoQuality();
       if (streamInfos != null)
       {
@@ -161,7 +169,7 @@ namespace YoutubeCrawlDotnet.Server.Controllers
           };
         }
       }
-      */
+      
       return new ResponseDTO<string>
       {
         success = true,
